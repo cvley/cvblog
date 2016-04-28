@@ -33,42 +33,6 @@ func New(token string) *Client {
 	return &Client{token: authToken}
 }
 
-func (c *Client) GetCurrentAccount() error {
-	requrl := "https://api.dropboxapi.com/2/users/get_current_account"
-
-	data := make(map[string]string, 1)
-	data = nil
-
-	body, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", requrl, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", c.token)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("response status code %d is not 200 OK", resp.StatusCode)
-	}
-
-	return nil
-}
-
 func (c *Client) ListFolder(folder string) ([]*Entry, error) {
 	requrl := "https://api.dropboxapi.com/2/files/list_folder"
 
