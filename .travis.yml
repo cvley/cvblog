@@ -1,0 +1,4 @@
+language: go
+script: go test -v github.com/cvley/cvblog/dropbox
+notifications:
+    email: false

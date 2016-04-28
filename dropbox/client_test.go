@@ -14,12 +14,8 @@ func TestListFolder(t *testing.T) {
 
 	client := New(token)
 
-	if err := client.ListFolder(""); err != nil {
+	if _, err := client.ListFolder("/Apps/hackcv"); err != nil {
 		t.Errorf("list folder fail: %s", err)
-	}
-
-	if err := client.GetCurrentAccount(); err != nil {
-		t.Errorf("get current account fail: %s", err)
 	}
 
 	if _, err := client.Download("id:YkRiURCPNyAAAAAAAAAAAg"); err != nil {
