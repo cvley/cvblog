@@ -11,7 +11,7 @@ import (
 
 var (
 	Host        = "https://api.dropboxapi.com"
-	DownloadUri = "/2/files/list_folder"
+	DownloadURI = "/2/files/list_folder"
 )
 
 // Entry is one item return from list_folder call
