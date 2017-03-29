@@ -46,6 +46,26 @@ func TestParseImage(t *testing.T) {
 	}
 }
 
+func TestParseList(t *testing.T) {
+	input := [][]byte{
+		[]byte("- block quote"),
+		[]byte("* valid"),
+		[]byte("invalid"),
+	}
+
+	output := [][]byte{
+		[]byte("<ul>\r\n<li>block quote</li>\r\n</ul>\r\n"),
+		[]byte("<ul>\r\n<li>valid</li>\r\n</ul>\r\n"),
+		[]byte("invalid"),
+	}
+	for i, v := range input {
+		result := ParseList(v)
+		if !bytes.Equal(result, output[i]) {
+			t.Fatalf("ParseQuote fail, [%s] vs [%s]", string(result), string(output[i]))
+		}
+	}
+}
+
 func TestParseQuate(t *testing.T) {
 	input := [][]byte{
 		[]byte("> block quote"),
@@ -148,6 +168,26 @@ func TestParseInlineCode(t *testing.T) {
 		r := ParseInlineCode(v)
 		if !bytes.Equal(r, output[i]) {
 			t.Fatalf("ParseInlineCode fail, [%s] vs [%s]", string(r), string(output[i]))
+		}
+	}
+}
+
+func TestParseCode(t *testing.T) {
+	input := [][]byte{
+		[]byte("```test\r\nblock quote\r\n```"),
+		[]byte("```\r\nvalid\r\n```"),
+		[]byte("invalid"),
+	}
+
+	output := [][]byte{
+		[]byte("<pre lang=\"test\">\r\n<code>\r\nblock quote\r\n</code>\r\n</pre>\r\n"),
+		[]byte("<pre>\r\n<code>\r\nvalid\r\n</code>\r\n</pre>\r\n"),
+		[]byte("invalid"),
+	}
+	for i, v := range input {
+		result := ParseCode(v)
+		if !bytes.Equal(result, output[i]) {
+			t.Fatalf("ParseCode fail, [%s] vs [%s]", string(result), string(output[i]))
 		}
 	}
 }
