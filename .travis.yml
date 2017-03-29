@@ -1,4 +1,4 @@
 language: go
-script: go test -v github.com/cvley/cvblog/dropbox
+script: go test -v ./...
 notifications:
     email: false
