@@ -3,6 +3,7 @@ package markdown
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"regexp"
 )
 
@@ -19,16 +20,57 @@ var (
 	inlineReEmphasis *regexp.Regexp
 	inlineReStrike   *regexp.Regexp
 	inlineReCode     *regexp.Regexp
+	inlineReLink     *regexp.Regexp
 )
 
 var (
-	lineTrail = []byte("\r\n")
+	lineTrail  = []byte("\n")
+	blockTrail = []byte("\n\n")
+	codeSign   = []byte("```")
 )
+
+type BlockType int
+
+const (
+	BlockTypeParagraph BlockType = iota
+	BlockTypeHeader
+	BlockTypeImage
+	BlockTypeList
+	BlockTypeCode
+	BlockTypeQuote
+)
+
+func (tp BlockType) String() string {
+	switch tp {
+	case BlockTypeHeader:
+		return "Header Block"
+
+	case BlockTypeImage:
+		return "Image Block"
+
+	case BlockTypeList:
+		return "List Block"
+
+	case BlockTypeCode:
+		return "Code Block"
+
+	case BlockTypeQuote:
+		return "Quote Block"
+
+	default:
+		return "Paragraph Block"
+	}
+}
+
+type Block struct {
+	data []byte
+	tp   BlockType
+}
 
 func init() {
 	reHeader = regexp.MustCompile(`^(#{1,6})\s*(\p{Han}+|[[:ascii:]]+)\s*#*$`)
-	reImage = regexp.MustCompile(`^!\[(\w+)\]\((.*)\)$`)
-	reQuote = regexp.MustCompile(`^>\s(.*)`)
+	reImage = regexp.MustCompile(`^!\[(.*)\]\((.+)\)$`)
+	reQuote = regexp.MustCompile(`^>\s(.*)$`)
 	reList = regexp.MustCompile(`^[*|-]\s(.*)$`)
 	reCode = regexp.MustCompile("^`{3}(\\w+)$")
 
@@ -36,32 +78,195 @@ func init() {
 	inlineReItalics = regexp.MustCompile(`\*|\_`)
 	inlineReStrike = regexp.MustCompile(`\~{2}`)
 	inlineReCode = regexp.MustCompile("`")
+	inlineReLink = regexp.MustCompile(`\[([^\[]+)\]\(([^\]]+)\)`)
 }
 
-func ParseCode(input []byte) []byte {
-	if !bytes.HasPrefix(input, []byte("```")) || !bytes.HasSuffix(input, []byte("```")) {
-		return input
+func Render(input []byte) []byte {
+	blocks := bytes.Split(input, blockTrail)
+
+	log.Println("block size", len(blocks))
+	buffer := bytes.Buffer{}
+	for _, data := range blocks {
+		block := NewBlock(data)
+		buffer.Write(block.Render())
 	}
 
+	return buffer.Bytes()
+}
+
+func NewBlock(input []byte) *Block {
+	tp := getBlockType(input)
+	log.Println("parse", string(input), tp.String())
+	return &Block{
+		data: input,
+		tp:   tp,
+	}
+}
+
+func (block *Block) Render() []byte {
+	switch block.tp {
+	case BlockTypeCode:
+		return parseCode(block.data)
+
+	case BlockTypeHeader:
+		return parseHeader(block.data)
+
+	case BlockTypeImage:
+		return parseImage(block.data)
+
+	case BlockTypeList:
+		data := block.renderInline()
+		return parseList(data)
+
+	case BlockTypeQuote:
+		data := block.renderInline()
+		return parseQuote(data)
+	}
+
+	buffer := bytes.Buffer{}
+	buffer.WriteString("\n<p>")
+	buffer.Write(block.data)
+	buffer.WriteString("</p>\n")
+
+	return buffer.Bytes()
+}
+
+func (block *Block) renderInline() []byte {
+	result := parseInlineCode(block.data)
+	result = parseInlineEmphasis(result)
+	result = parseInlineItalics(result)
+	result = parseInlineLink(result)
+	return parseInlineStrike(result)
+}
+
+func getBlockType(input []byte) BlockType {
+	if bytes.HasPrefix(input, codeSign) && bytes.HasSuffix(input, codeSign) {
+		return BlockTypeCode
+	}
+
+	if reImage.Match(input) {
+		return BlockTypeImage
+	}
+
+	if reHeader.Match(input) {
+		return BlockTypeHeader
+	}
+
+	if isList(input) {
+		return BlockTypeList
+	}
+
+	if isQuote(input) {
+		return BlockTypeQuote
+	}
+
+	return BlockTypeParagraph
+}
+
+func isList(input []byte) bool {
+	lists := bytes.Split(input, lineTrail)
+	for _, list := range lists {
+		if !reList.Match(list) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isQuote(input []byte) bool {
+	quotes := bytes.Split(input, lineTrail)
+	for _, quote := range quotes {
+		if !reQuote.Match(quote) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func parseCode(input []byte) []byte {
 	contents := bytes.Split(input, lineTrail)
+
+	pre := "\n<pre>\n<code>\n"
 	result := reCode.FindSubmatch(contents[0])
-	var pre string
 	if len(result) == 2 {
-		pre = fmt.Sprintf("<pre lang=\"%s\">\r\n<code>\r\n", result[1])
-	} else {
-		pre = "<pre>\r\n<code>\r\n"
+		pre = fmt.Sprintf("\n<pre lang=\"%s\">\n<code>\n", result[1])
 	}
 
 	var buffer bytes.Buffer
 	buffer.WriteString(pre)
 	codes := contents[1 : len(contents)-1]
 	buffer.Write(bytes.Join(codes, lineTrail))
-	buffer.WriteString("\r\n</code>\r\n</pre>\r\n")
+	buffer.WriteString("\n</code>\n</pre>\n")
 
 	return buffer.Bytes()
 }
 
-func ParseInlineCode(input []byte) []byte {
+func parseQuote(input []byte) []byte {
+	var buffer bytes.Buffer
+	buffer.Write([]byte("\n<blockquote>"))
+
+	lines := bytes.Split(input, lineTrail)
+	for _, line := range lines {
+		ret := reQuote.FindSubmatch(line)
+		if ret == nil {
+			return input
+		}
+		buffer.Write(ret[1])
+	}
+	buffer.Write([]byte("</blockquote>\n"))
+
+	return buffer.Bytes()
+}
+
+func parseHeader(input []byte) []byte {
+	if !reHeader.Match(input) {
+		return input
+	}
+
+	ret := reHeader.FindSubmatch(input)
+	num := len(ret[1])
+	header := fmt.Sprintf("\n<h%d> %s </h%d>\n", num, string(ret[2]), num)
+	return []byte(header)
+}
+
+func parseList(input []byte) []byte {
+	lists := bytes.Split(input, lineTrail)
+
+	var buffer bytes.Buffer
+	buffer.WriteString("\n<ul>\n")
+	for _, list := range lists {
+		result := reList.FindAllSubmatch(list, -1)
+		if result == nil {
+			return input
+		}
+
+		for _, v := range result {
+			buffer.WriteString("<li>")
+			buffer.Write(v[1])
+			buffer.WriteString("</li>\n")
+		}
+	}
+
+	buffer.WriteString("</ul>\n")
+
+	return buffer.Bytes()
+}
+
+func parseImage(input []byte) []byte {
+	ret := reImage.FindSubmatch(input)
+	if ret == nil {
+		return input
+	}
+
+	alt := ret[1]
+	src := ret[2]
+	result := fmt.Sprintf("\n<img src=\"%s\" alt=\"%s\">\n", src, alt)
+	return []byte(result)
+}
+
+func parseInlineCode(input []byte) []byte {
 	result := inlineReCode.FindAllSubmatchIndex(input, -1)
 	if result == nil || len(result)%2 == 1 {
 		return input
@@ -88,7 +293,7 @@ func ParseInlineCode(input []byte) []byte {
 	return buffer.Bytes()
 }
 
-func ParseInlineStrike(input []byte) []byte {
+func parseInlineStrike(input []byte) []byte {
 	result := inlineReStrike.FindAllSubmatchIndex(input, -1)
 	if result == nil || len(result)%2 == 1 {
 		return input
@@ -115,7 +320,7 @@ func ParseInlineStrike(input []byte) []byte {
 	return buffer.Bytes()
 }
 
-func ParseInlineItalics(input []byte) []byte {
+func parseInlineItalics(input []byte) []byte {
 	result := inlineReItalics.FindAllSubmatchIndex(input, -1)
 	if result == nil || len(result)%2 == 1 {
 		return input
@@ -142,7 +347,7 @@ func ParseInlineItalics(input []byte) []byte {
 	return buffer.Bytes()
 }
 
-func ParseInlineEmphasis(input []byte) []byte {
+func parseInlineEmphasis(input []byte) []byte {
 	result := inlineReEmphasis.FindAllSubmatchIndex(input, -1)
 	if result == nil || len(result)%2 == 1 {
 		return input
@@ -169,61 +374,24 @@ func ParseInlineEmphasis(input []byte) []byte {
 	return buffer.Bytes()
 }
 
-func ParseQuate(input []byte) []byte {
-	if !reQuote.Match(input) {
+func parseInlineLink(input []byte) []byte {
+	indexes := inlineReLink.FindAllSubmatchIndex(input, -1)
+	if indexes == nil {
 		return input
 	}
 
 	var buffer bytes.Buffer
-	buffer.Write([]byte("<blockquote>"))
+	var start int
+	for _, index := range indexes {
+		if start < index[0] {
+			buffer.Write(input[start:index[0]])
+		}
 
-	lines := bytes.Split(input, lineTrail)
-	for _, line := range lines {
-		ret := reQuote.FindSubmatch(line)
-		buffer.Write(ret[1])
+		var b []byte
+		b = inlineReLink.Expand(b, []byte("<a href=\"$2\">$1</a>"), input, index)
+		buffer.Write(b)
+		start = index[1]
 	}
-	buffer.Write([]byte("</blockquote>"))
 
 	return buffer.Bytes()
-}
-
-func ParseHeader(input []byte) []byte {
-	if !reHeader.Match(input) {
-		return input
-	}
-
-	ret := reHeader.FindSubmatch(input)
-	num := len(ret[1])
-	header := fmt.Sprintf("<h%d> %s </h%d>", num, string(ret[2]), num)
-	return []byte(header)
-}
-
-func ParseList(input []byte) []byte {
-	result := reList.FindAllSubmatch(input, -1)
-	if result == nil {
-		return input
-	}
-
-	var buffer bytes.Buffer
-	buffer.WriteString("<ul>\r\n")
-	for _, v := range result {
-		buffer.WriteString("<li>")
-		buffer.Write(v[1])
-		buffer.WriteString("</li>\r\n")
-	}
-	buffer.WriteString("</ul>\r\n")
-
-	return buffer.Bytes()
-}
-
-func ParseImage(input []byte) []byte {
-	if !reImage.Match(input) {
-		return input
-	}
-
-	ret := reImage.FindSubmatch(input)
-	alt := ret[1]
-	src := ret[2]
-	result := fmt.Sprintf("<img src=\"%s\" alt=\"%s\">", src, alt)
-	return []byte(result)
 }

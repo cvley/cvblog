@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"bytes"
+	"io/ioutil"
+	"os"
 )
 
 func TestParseHeader(t *testing.T) {
@@ -14,13 +16,13 @@ func TestParseHeader(t *testing.T) {
 	}
 
 	output := [][]byte{
-		[]byte("<h4> test! </h4>"),
-		[]byte("<h3> 中文 </h3>"),
+		[]byte("\n<h4> test! </h4>\n"),
+		[]byte("\n<h3> 中文 </h3>\n"),
 		[]byte("invalid"),
 	}
 
 	for i, v := range input {
-		result := ParseHeader(v)
+		result := parseHeader(v)
 		if !bytes.Equal(result, output[i]) {
 			t.Fatalf("ParseHeader fail, [%s] vs [%s]", string(result), string(output[i]))
 		}
@@ -34,12 +36,12 @@ func TestParseImage(t *testing.T) {
 	}
 
 	output := [][]byte{
-		[]byte("<img src=\"http://www.hackcv.com/test.jpg\" alt=\"xxx\">"),
+		[]byte("\n<img src=\"http://www.hackcv.com/test.jpg\" alt=\"xxx\">\n"),
 		[]byte("xxx.jpg"),
 	}
 
 	for i, v := range input {
-		result := ParseImage(v)
+		result := parseImage(v)
 		if !bytes.Equal(result, output[i]) {
 			t.Fatalf("ParseImage fail, [%s] vs [%s]", string(result), string(output[i]))
 		}
@@ -54,30 +56,30 @@ func TestParseList(t *testing.T) {
 	}
 
 	output := [][]byte{
-		[]byte("<ul>\r\n<li>block quote</li>\r\n</ul>\r\n"),
-		[]byte("<ul>\r\n<li>valid</li>\r\n</ul>\r\n"),
+		[]byte("\n<ul>\n<li>block quote</li>\n</ul>\n"),
+		[]byte("\n<ul>\n<li>valid</li>\n</ul>\n"),
 		[]byte("invalid"),
 	}
 	for i, v := range input {
-		result := ParseList(v)
+		result := parseList(v)
 		if !bytes.Equal(result, output[i]) {
 			t.Fatalf("ParseQuote fail, [%s] vs [%s]", string(result), string(output[i]))
 		}
 	}
 }
 
-func TestParseQuate(t *testing.T) {
+func TestParseQuote(t *testing.T) {
 	input := [][]byte{
 		[]byte("> block quote"),
 		[]byte("invalid"),
 	}
 
 	output := [][]byte{
-		[]byte("<blockquote>block quote</blockquote>"),
+		[]byte("\n<blockquote>block quote</blockquote>\n"),
 		[]byte("invalid"),
 	}
 	for i, v := range input {
-		result := ParseQuate(v)
+		result := parseQuote(v)
 		if !bytes.Equal(result, output[i]) {
 			t.Fatalf("ParseQuote fail, [%s] vs [%s]", string(result), string(output[i]))
 		}
@@ -100,7 +102,7 @@ func TestParseInlineEmphasis(t *testing.T) {
 	}
 
 	for i, v := range input {
-		r := ParseInlineEmphasis(v)
+		r := parseInlineEmphasis(v)
 		if !bytes.Equal(r, output[i]) {
 			t.Fatalf("ParseInlineEmphasis fail, [%s] vs [%s]", string(r), string(output[i]))
 		}
@@ -123,7 +125,7 @@ func TestParseInlineItalics(t *testing.T) {
 	}
 
 	for i, v := range input {
-		r := ParseInlineItalics(v)
+		r := parseInlineItalics(v)
 		if !bytes.Equal(r, output[i]) {
 			t.Fatalf("ParseInlineItalics fail, [%s] vs [%s]", string(r), string(output[i]))
 		}
@@ -144,7 +146,7 @@ func TestParseInlineStrike(t *testing.T) {
 	}
 
 	for i, v := range input {
-		r := ParseInlineStrike(v)
+		r := parseInlineStrike(v)
 		if !bytes.Equal(r, output[i]) {
 			t.Fatalf("ParseInlineStrike fail, [%s] vs [%s]", string(r), string(output[i]))
 		}
@@ -165,7 +167,7 @@ func TestParseInlineCode(t *testing.T) {
 	}
 
 	for i, v := range input {
-		r := ParseInlineCode(v)
+		r := parseInlineCode(v)
 		if !bytes.Equal(r, output[i]) {
 			t.Fatalf("ParseInlineCode fail, [%s] vs [%s]", string(r), string(output[i]))
 		}
@@ -174,20 +176,59 @@ func TestParseInlineCode(t *testing.T) {
 
 func TestParseCode(t *testing.T) {
 	input := [][]byte{
-		[]byte("```test\r\nblock quote\r\n```"),
-		[]byte("```\r\nvalid\r\n```"),
-		[]byte("invalid"),
+		[]byte("```test\nblock quote\n```"),
+		[]byte("```\nvalid\n```"),
 	}
 
 	output := [][]byte{
-		[]byte("<pre lang=\"test\">\r\n<code>\r\nblock quote\r\n</code>\r\n</pre>\r\n"),
-		[]byte("<pre>\r\n<code>\r\nvalid\r\n</code>\r\n</pre>\r\n"),
-		[]byte("invalid"),
+		[]byte("\n<pre lang=\"test\">\n<code>\nblock quote\n</code>\n</pre>\n"),
+		[]byte("\n<pre>\n<code>\nvalid\n</code>\n</pre>\n"),
 	}
 	for i, v := range input {
-		result := ParseCode(v)
+		result := parseCode(v)
 		if !bytes.Equal(result, output[i]) {
 			t.Fatalf("ParseCode fail, [%s] vs [%s]", string(result), string(output[i]))
 		}
 	}
+}
+
+func TestParseInlineLink(t *testing.T) {
+	input := [][]byte{
+		[]byte("test [link](http://hackcv.com)"),
+		[]byte("[test](http://baidu.com) test [link](http://hackcv.com)"),
+	}
+
+	output := [][]byte{
+		[]byte("test <a href=\"http://hackcv.com\">link</a>"),
+		[]byte("<a href=\"http://baidu.com\">test</a> test <a href=\"http://hackcv.com\">link</a>"),
+	}
+	for i, v := range input {
+		result := parseInlineLink(v)
+		if !bytes.Equal(result, output[i]) {
+			t.Fatalf("ParseCode fail, [%s] vs [%s]", string(result), string(output[i]))
+		}
+	}
+}
+
+func TestBlock(t *testing.T) {
+	input := "```shell\n./configure\nmake\nmake install\n```"
+	block := NewBlock([]byte(input))
+	result := block.Render()
+	t.Log(string(result))
+}
+
+func TestRender(t *testing.T) {
+	input := "README.md"
+	f, err := os.Open(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result := Render(b)
+	t.Log(string(result))
 }
