@@ -1,23 +1,23 @@
-package blog
+package cvblog
 
 import (
 	"html/template"
-	"os"
 	"log"
-
-	"github.com/cvley/cvblog/article"
+	"os"
 )
 
 var (
-	postTmpl *template.Template
+	indexTmpl *template.Template
+	postTmpl  *template.Template
 )
 
 func init() {
+	indexTmpl = template.Must(template.New("index.html").ParseFiles("./templates/index.html"))
 	postTmpl = template.Must(template.New("post.html").ParseFiles("./templates/post.html"))
 }
 
 func ParsePost(input []byte) error {
-	post := article.New(input)
+	post := NewArticle(input)
 	log.Printf("%+v", post)
 
 	f, err := os.Create(post.URL)

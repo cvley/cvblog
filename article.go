@@ -1,4 +1,4 @@
-package article
+package cvblog
 
 import (
 	"bytes"
@@ -8,6 +8,10 @@ import (
 	"time"
 
 	"github.com/cvley/cvblog/markdown"
+)
+
+const (
+	defaultCategory = "心得体会"
 )
 
 var (
@@ -30,21 +34,23 @@ type Article struct {
 	Body     template.HTML
 }
 
-type ArticleSortByTime []Article
+type ArticleSortByTime []*Article
 
 func init() {
 	reDate = regexp.MustCompile(`^Date: (.+)$`)
 	reTitle = regexp.MustCompile(`^Title: (.+)$`)
-	reCategory = regexp.MustCompile(`^Category: (.+)$`)
 	reTag = regexp.MustCompile(`^Tags: (.+)$`)
 	reStatus = regexp.MustCompile(`^Status: (.+)$`)
 	reURL = regexp.MustCompile(`^URL: (.+)$`)
 }
 
-func New(input []byte) Article {
+func NewArticle(input []byte) *Article {
 	content := bytes.SplitN(input, []byte("\n\n"), 2)
 
-	result := Article{Body: template.HTML(markdown.Render(content[1]))}
+	result := &Article{
+		Body:     template.HTML(markdown.Render(content[1])),
+		Category: defaultCategory,
+	}
 	prefixs := bytes.Split(content[0], []byte("\n"))
 	for _, prefix := range prefixs {
 		if reDate.Match(prefix) {
@@ -59,10 +65,6 @@ func New(input []byte) Article {
 		if reTitle.Match(prefix) {
 			title := reTitle.FindSubmatch(prefix)
 			result.Title = template.HTML(title[1])
-		}
-		if reCategory.Match(prefix) {
-			category := reCategory.FindSubmatch(prefix)
-			result.Category = string(category[1])
 		}
 		if reTag.Match(prefix) {
 			tags := reTag.FindSubmatch(prefix)
@@ -81,7 +83,11 @@ func New(input []byte) Article {
 	return result
 }
 
-func (a Article) Summary() string {
+func (a *Article) SetCategory(c string) {
+	a.Category = c
+}
+
+func (a *Article) Summary() string {
 	length := len(a.Body)
 	if length > 500 {
 		length = 500
