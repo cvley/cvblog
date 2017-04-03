@@ -29,4 +29,12 @@ func TestRender(t *testing.T) {
 	if err := render.ToArchive(); err != nil {
 		t.Fatal(err)
 	}
+
+	if err := render.ToTags(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := render.ToCategory(); err != nil {
+		t.Fatal(err)
+	}
 }
