@@ -76,7 +76,11 @@ func NewArticle(input []byte) *Article {
 		}
 		if reURL.Match(prefix) {
 			urls := reURL.FindSubmatch(prefix)
-			result.URL = string(urls[1])
+			if bytes.HasSuffix(urls[1], []byte(".html")) {
+				result.URL = string(urls[1])
+			} else {
+				result.URL = string(urls[1]) + ".html"
+			}
 		}
 	}
 

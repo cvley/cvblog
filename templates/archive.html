@@ -14,10 +14,12 @@
 	  </header>
 
 	  <article>
+		  {{range .}}
 		  <ul class="post-meta">
 			  <li>时间： {{.Date}}</li>
 			  <li><a href="{{.URL}}">{{.URL}}</a></li>
 		  </ul>
+		  {{end}}
 	  </article>
 
 	  <footer>
