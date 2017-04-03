@@ -21,7 +21,7 @@ func init() {
 }
 
 func TestRender(t *testing.T) {
-	render := NewRender(posts)
+	render := NewRender(posts, "just test about")
 	if err := render.ToPosts(); err != nil {
 		t.Fatal(err)
 	}
@@ -39,6 +39,10 @@ func TestRender(t *testing.T) {
 	}
 
 	if err := render.ToIndex(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := render.ToAbout(); err != nil {
 		t.Fatal(err)
 	}
 }

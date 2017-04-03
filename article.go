@@ -68,7 +68,12 @@ func NewArticle(input []byte) *Article {
 		}
 		if reTag.Match(prefix) {
 			tags := reTag.FindSubmatch(prefix)
-			result.Tags = strings.Split(string(tags[1]), ",")
+			ts := strings.Split(string(tags[1]), ",")
+			result.Tags = []string{}
+			for _, v := range ts {
+				trim := strings.Trim(v, " ")
+				result.Tags = append(result.Tags, trim)
+			}
 		}
 		if reStatus.Match(prefix) {
 			status := reStatus.FindSubmatch(prefix)

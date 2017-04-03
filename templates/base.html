@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+		<meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="/static/style.css" rel="stylesheet">
+		<title>{{.Title}}</title>
+  </head>
+
+  <body>
+	  <header>
+		  <h1>{{.Title}}</h1>
+		  <p><a href="/" target="_blank">by cvley</a></p>
+	  </header>
+
+	  <article>
+		  {{range .Posts}}
+		  <ul class="post-meta">
+			  <li>时间： {{.Date}}</li>
+			  <li>标签：
+				  <a href="{{.URL}}">{{.Title}}</a>&nbsp;
+			  </li>
+		  </ul>
+		  {{end}}
+	  </article>
+
+	  <footer>
+		  <item><a href="/">首页</a></item>
+		  <item><a href="/category.html">分类</a></item>
+		  <item><a href="/archive.html">归档</a></item>
+		  <item><a href="/about.html">关于</a></item>
+
+		  <div class="copyright">&copy; 2013 - 2017 hackcv.com，由 cvblog 驱动</div>
+	  </footer>
+  </body>
+</html>
