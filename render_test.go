@@ -37,4 +37,8 @@ func TestRender(t *testing.T) {
 	if err := render.ToCategory(); err != nil {
 		t.Fatal(err)
 	}
+
+	if err := render.ToIndex(); err != nil {
+		t.Fatal(err)
+	}
 }

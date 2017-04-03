@@ -123,3 +123,16 @@ func (r *Render) ToCategory() error {
 
 	return cateTmpl.Execute(f, r.categoryCount)
 }
+
+func (r *Render) ToIndex() error {
+	f, err := os.Create("html/index.html")
+	if err != nil {
+		return err
+	}
+	length := len(r.posts)
+	if length > 5 {
+		length = 5
+	}
+
+	return indexTmpl.Execute(f, r.posts[:length])
+}
