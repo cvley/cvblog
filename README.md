@@ -2,6 +2,7 @@
 > a simple static blog system integrated with dropbox and nginx
 
 [![Build Status](https://travis-ci.org/cvley/cvblog.svg?branch=master)](https://travis-ci.org/cvley/cvblog)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cvley/cvblog)](https://goreportcard.com/badge/github.com/cvley/cvblog)
 
 This is a project for practising **Markdown**, **regexp**, **CSS** syntax and **nginx configuration**.
 
@@ -15,9 +16,9 @@ This is a project for practising **Markdown**, **regexp**, **CSS** syntax and **
 
 ## Todo list
 
-- [] more flexible template render
-- [] support site descriptions file in dropbox
-- [] more support on dropbox API
+- [ ] more flexible template render
+- [ ] support site descriptions file in dropbox
+- [ ] more support on dropbox API
 
 
 ## Licensing
