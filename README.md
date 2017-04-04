@@ -3,6 +3,7 @@
 
 [![Build Status](https://travis-ci.org/cvley/cvblog.svg?branch=master)](https://travis-ci.org/cvley/cvblog)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cvley/cvblog)](https://goreportcard.com/badge/github.com/cvley/cvblog)
+[![codecov](https://codecov.io/gh/cvley/cvblog/branch/master/graph/badge.svg)](https://codecov.io/gh/cvley/cvblog)
 
 This is a project for practising **Markdown**, **regexp**, **CSS** syntax and **nginx configuration**.
 
