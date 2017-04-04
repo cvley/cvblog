@@ -2,8 +2,8 @@ package dropbox
 
 import (
 	"os"
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestListFolder(t *testing.T) {

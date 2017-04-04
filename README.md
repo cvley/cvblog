@@ -4,7 +4,7 @@
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/cvley/cvblog) 
 [![Build Status](https://travis-ci.org/cvley/cvblog.svg?branch=master)](https://travis-ci.org/cvley/cvblog)
 [![Coverage Status](https://codecov.io/gh/cvley/cvblog/branch/master/graph/badge.svg)](https://codecov.io/gh/cvley/cvblog)
-[![Go Report Card](https://goreportcard.com/badge/github.com/cvley/cvblog)](https://goreportcard.com/badge/github.com/cvley/cvblog)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cvley/cvblog)](https://goreportcard.com/report/github.com/cvley/cvblog)
 
 This is a project for practising **Markdown**, **regexp**, **CSS** syntax and **nginx configuration**.
 
