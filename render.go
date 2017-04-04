@@ -32,6 +32,7 @@ type Render struct {
 	categoryCount []*CategoryCount
 	tagCount      []*TagCount
 	about         string
+	outputDir     string
 }
 
 func init() {
@@ -95,12 +96,25 @@ func NewRender(posts []*Article, about string) *Render {
 		categoryCount: catResult,
 		tagCount:      tagResult,
 		about:         about,
+		outputDir:     "",
 	}
+}
+
+func (r *Render) SetOutputDir(dir string) {
+	r.outputDir = dir
+}
+
+func (r *Render) outputFile(name string) (*os.File, error) {
+	if r.outputDir == "" {
+		return os.Stdout, nil
+	}
+
+	return os.Create(r.outputDir + "/" + name)
 }
 
 func (r *Render) ToPosts() error {
 	for _, v := range r.posts {
-		f, err := os.Create("html/" + v.URL)
+		f, err := r.outputFile(v.URL)
 		if err != nil {
 			return err
 		}
@@ -114,7 +128,7 @@ func (r *Render) ToPosts() error {
 }
 
 func (r *Render) ToArchive() error {
-	f, err := os.Create("html/archives.html")
+	f, err := r.outputFile("archives.html")
 	if err != nil {
 		return err
 	}
@@ -130,7 +144,7 @@ func (r *Render) ToTags() error {
 		}
 		output.Title = t.Tag
 		output.Posts = t.Posts
-		tf, err := os.Create("html/tags/" + t.Tag)
+		tf, err := r.outputFile(t.Tag)
 		if err != nil {
 			return err
 		}
@@ -139,7 +153,7 @@ func (r *Render) ToTags() error {
 		}
 	}
 
-	f, err := os.Create("html/tags.html")
+	f, err := r.outputFile("tags.html")
 	if err != nil {
 		return err
 	}
@@ -155,7 +169,7 @@ func (r *Render) ToCategory() error {
 		}
 		output.Title = c.Category
 		output.Posts = c.Posts
-		cf, err := os.Create("html/category/" + c.Category)
+		cf, err := r.outputFile("category/" + c.Category)
 		if err != nil {
 			return err
 		}
@@ -164,7 +178,7 @@ func (r *Render) ToCategory() error {
 		}
 	}
 
-	f, err := os.Create("html/category.html")
+	f, err := r.outputFile("category.html")
 	if err != nil {
 		return err
 	}
@@ -173,7 +187,7 @@ func (r *Render) ToCategory() error {
 }
 
 func (r *Render) ToIndex() error {
-	f, err := os.Create("html/index.html")
+	f, err := r.outputFile("index.html")
 	if err != nil {
 		return err
 	}
@@ -186,7 +200,7 @@ func (r *Render) ToIndex() error {
 }
 
 func (r *Render) ToAbout() error {
-	f, err := os.Create("html/about.html")
+	f, err := r.outputFile("about.html")
 	if err != nil {
 		return err
 	}
