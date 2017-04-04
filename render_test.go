@@ -1,6 +1,7 @@
 package cvblog
 
 import (
+	"os"
 	"testing"
 )
 
@@ -18,6 +19,9 @@ func init() {
 		a := NewArticle([]byte(v))
 		posts[i] = a
 	}
+
+	os.MkdirAll("html/tags", 0644)
+	os.MkdirAll("html/category", 0644)
 }
 
 func TestRender(t *testing.T) {
