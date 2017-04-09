@@ -3,7 +3,6 @@ package markdown
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"regexp"
 )
 
@@ -84,7 +83,6 @@ func init() {
 func Render(input []byte) []byte {
 	blocks := bytes.Split(input, blockTrail)
 
-	log.Println("block size", len(blocks))
 	buffer := bytes.Buffer{}
 	for _, data := range blocks {
 		block := NewBlock(data)
@@ -96,7 +94,6 @@ func Render(input []byte) []byte {
 
 func NewBlock(input []byte) *Block {
 	tp := getBlockType(input)
-	log.Println("parse", string(input), tp.String())
 	return &Block{
 		data: input,
 		tp:   tp,
