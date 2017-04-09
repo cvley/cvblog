@@ -100,6 +100,8 @@ func (c *Client) Download(fileid string) ([]byte, error) {
 		return nil, err
 	}
 
+	fmt.Printf("%s", string(body))
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("response status %d not 200 OK", resp.StatusCode)
 	}
