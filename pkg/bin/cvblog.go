@@ -25,7 +25,7 @@ func main() {
 		return
 	}
 
-	files, err := filepath.Glob("*.md")
+	files, err := filepath.Glob(dir+"/*.md")
 	if err != nil {
 		fmt.Println(err)
 		return
