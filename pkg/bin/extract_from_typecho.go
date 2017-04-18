@@ -74,7 +74,7 @@ func main() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		f, err := os.Create("posts/" + post.Title)
+		f, err := os.Create("posts/" + post.Title + ".md")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
